@@ -17,11 +17,9 @@ jobs:
           
       - name: Push to Hugging Face
         env:
-          # THIS IS THE MAGIC LINE: It securely grabs the token from the GitHub vault!
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-         
-          git remote add huggingface https://shashi2160:$HF_TOKEN@huggingface.co/spaces/shashi2160/shashi shekhar
+          # FIXED: Used the exact Space name "House-Price-Predictor"
+          git remote add huggingface https://shashi2160:$HF_TOKEN@huggingface.co/spaces/shashi2160/House-Price-Predictor
           
-
           git push -f huggingface main
