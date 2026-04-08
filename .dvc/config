@@ -3,4 +3,4 @@
 ['remote "local_storage"']
     url = ../dvc_storage
 ['remote "origin"']
-    url = https://dagshub.com/ssedwe/house_prediction
+    url = https://dagshub.com/ssedwe/house_prediction.dvc
