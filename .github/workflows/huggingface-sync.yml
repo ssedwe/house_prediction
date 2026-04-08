@@ -21,7 +21,7 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
          
-          git remote add huggingface https://shashi2160:$HF_TOKEN@huggingface.co/spaces/shashi2160/shashi2160
+          git remote add huggingface https://shashi2160:$HF_TOKEN@huggingface.co/spaces/shashi2160/shashi shekhar
           
 
           git push -f huggingface main
