@@ -3,6 +3,6 @@ env/
 __pycache__/
 *.pyc
 .git/
-.dvc/
+
 .github/
 artifacts/data_ingestion/
