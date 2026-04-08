@@ -1,0 +1,22 @@
+COLUMNS:
+  bedrooms: int64
+  bathrooms: float64
+  sqft_living: int64
+  sqft_lot: int64
+  floors: float64
+  waterfront: int64
+  view: int64
+  condition: int64
+  grade: int64
+  sqft_above: int64
+  sqft_basement: int64
+  yr_built: int64
+  yr_renovated: int64
+  zipcode: int64
+  lat: float64
+  long: float64
+  sqft_living15: int64
+  price: float64
+
+TARGET_COLUMN:
+  name: price

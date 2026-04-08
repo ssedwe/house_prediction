@@ -1,0 +1,27 @@
+name: Sync to Hugging Face Hub
+
+# This tells the drone to wake up every time you push to the 'main' branch
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Push to Hugging Face
+        env:
+          # THIS IS THE MAGIC LINE: It securely grabs the token from the GitHub vault!
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+         
+          git remote add huggingface https://shashi2160:$HF_TOKEN@huggingface.co/spaces/shashi2160/shashi2160
+          
+
+          git push -f huggingface main
