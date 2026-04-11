@@ -2,11 +2,11 @@ import sys
 import pandas as pd
 import joblib
 from pathlib import Path
-from src.exception import CustomException
-from src.logger import logger
+from backend.src.exception import CustomException
+from backend.src.logger import logger
 
 # CRITICAL IMPORT: So joblib knows how to unpickle your custom logic!
-from src.components.data_transformation import FeatureEngineeringWrapper
+from backend.src.components.data_transformation import FeatureEngineeringWrapper
 
 class PredictPipeline:
     def __init__(self):

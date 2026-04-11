@@ -5,8 +5,8 @@ import yaml
 from pathlib import Path  # <--- The missing puzzle piece!
 from box import ConfigBox
 
-from src.logger import logging
-from src.exception import CustomException
+from backend.src.logger import logging
+from backend.src.exception import CustomException
 
 def read_yaml(path_to_yaml):
     with open(path_to_yaml) as yaml_file:

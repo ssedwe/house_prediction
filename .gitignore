@@ -218,5 +218,6 @@ __pycache__/
 .env
 
 mlruns/
+dvc_storage/
 venv/
 .envgi

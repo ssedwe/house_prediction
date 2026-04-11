@@ -7,14 +7,14 @@ import mlflow
 import mlflow.sklearn
 from urllib.parse import urlparse
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from src.logger import logger
-from src.exception import CustomException
-from src.entity.config_entity import ModelEvaluationConfig
-from src.utils.common import save_json
+from backend.src.logger import logger
+from backend.src.exception import CustomException
+from backend.src.entity.config_entity import ModelEvaluationConfig
+from backend.src.utils.common import save_json
 from pathlib import Path
 
 # CRITICAL MLOPS IMPORT: We must import the custom wrapper so joblib can unpickle it!
-from src.components.data_transformation import FeatureEngineeringWrapper
+from backend.src.components.data_transformation import FeatureEngineeringWrapper
 
 class ModelEvaluation:
     def __init__(self, config: ModelEvaluationConfig):

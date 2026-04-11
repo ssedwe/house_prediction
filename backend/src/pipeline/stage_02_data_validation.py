@@ -1,10 +1,10 @@
 import sys
-from src.config.configuration import ConfigurationManager
-from src.components.data_validation import DataValidation
-from src.logger import logger
-from src.exception import CustomException
-from src.utils.common import read_yaml
-from src.constants import SCHEMA_FILE_PATH
+from backend.src.config.configuration import ConfigurationManager
+from backend.src.components.data_validation import DataValidation
+from backend.src.logger import logger
+from backend.src.exception import CustomException
+from backend.src.utils.common import read_yaml
+from backend.src.constants import SCHEMA_FILE_PATH
 
 STAGE_NAME = "Data Validation Stage"
 

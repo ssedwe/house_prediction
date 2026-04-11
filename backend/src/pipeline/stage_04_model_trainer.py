@@ -1,8 +1,8 @@
 import sys
-from src.config.configuration import ConfigurationManager
-from src.components.model_trainer import ModelTrainer
-from src.logger import logger
-from src.exception import CustomException
+from backend.src.config.configuration import ConfigurationManager
+from backend.src.components.model_trainer import ModelTrainer
+from backend.src.logger import logger
+from backend.src.exception import CustomException
 
 STAGE_NAME = "Model Training Stage"
 

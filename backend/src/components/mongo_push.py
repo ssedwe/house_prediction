@@ -4,9 +4,9 @@ import pandas as pd
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
-from src.logger import logger
-from src.exception import CustomException
-from src.utils.common import read_yaml_file
+from backend.src.logger import logger
+from backend.src.exception import CustomException
+from backend.src.utils.common import read_yaml_file
 
 
 # Load env

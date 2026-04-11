@@ -8,9 +8,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.base import BaseEstimator, TransformerMixin  # <-- NEW: Allows Custom Transformers
 import joblib
-from src.logger import logger
-from src.exception import CustomException
-from src.entity.config_entity import DataTransformationConfig
+from backend.src.logger import logger
+from backend.src.exception import CustomException
+from backend.src.entity.config_entity import DataTransformationConfig
 
 # ==========================================================
 # 1. THE CUSTOM TRANSFORMER (Baking Pandas into Scikit-Learn)

@@ -5,9 +5,9 @@ from pymongo import MongoClient
 from sklearn.model_selection import train_test_split
 from dotenv import load_dotenv
 
-from src.logger import logger
-from src.exception import CustomException
-from src.entity.config_entity import DataIngestionConfig
+from backend.src.logger import logger
+from backend.src.exception import CustomException
+from backend.src.entity.config_entity import DataIngestionConfig
 
 # Load env variables (for MONGODB_URL)
 load_dotenv()

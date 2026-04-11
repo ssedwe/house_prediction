@@ -1,6 +1,6 @@
-from src.constants import *
-from src.utils.common import read_yaml, create_directories
-from src.entity.config_entity import (DataIngestionConfig, 
+from backend.src.constants import *
+from backend.src.utils.common import read_yaml, create_directories
+from backend.src.entity.config_entity import (DataIngestionConfig, 
                                       DataValidationConfig, 
                                       DataTransformationConfig,
                                       ModelTrainerConfig,

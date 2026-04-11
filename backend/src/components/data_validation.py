@@ -1,9 +1,9 @@
 import os
 import sys
 import pandas as pd
-from src.logger import logger
-from src.exception import CustomException
-from src.entity.config_entity import DataValidationConfig
+from backend.src.logger import logger
+from backend.src.exception import CustomException
+from backend.src.entity.config_entity import DataValidationConfig
 
 class DataValidation:
     def __init__(self, config: DataValidationConfig, schema: dict):

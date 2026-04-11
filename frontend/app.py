@@ -6,8 +6,8 @@ from pydantic import BaseModel
 import uvicorn
 
 # Import your prediction pipeline
-from src.pipeline.predict_pipeline import CustomData, PredictPipeline
-from src.logger import logger
+from backend.src.pipeline.predict_pipeline import CustomData, PredictPipeline
+from backend.src.logger import logger
 
 # ==============================================================
 # 1. LIFESPAN EVENT (Solves the Disk Read Bottleneck)

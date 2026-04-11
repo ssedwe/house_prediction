@@ -1,8 +1,8 @@
-from src.config.configuration import ConfigurationManager
-from src.components.model_evaluation import ModelEvaluation
-from src.logger import logger
+from backend.src.config.configuration import ConfigurationManager
+from backend.src.components.model_evaluation import ModelEvaluation
+from backend.src.logger import logger
 import sys
-from src.exception import CustomException
+from backend.src.exception import CustomException
 
 STAGE_NAME = "Model Evaluation Stage"
 

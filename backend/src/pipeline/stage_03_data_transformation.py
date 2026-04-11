@@ -1,9 +1,9 @@
 import sys
 import os
-from src.config.configuration import ConfigurationManager
-from src.components.data_transformation import DataTransformation
-from src.logger import logger
-from src.exception import CustomException
+from backend.src.config.configuration import ConfigurationManager
+from backend.src.components.data_transformation import DataTransformation
+from backend.src.logger import logger
+from backend.src.exception import CustomException
 
 STAGE_NAME = "Data Transformation Stage"
 

@@ -5,7 +5,7 @@ import joblib
 import mlflow
 import mlflow.sklearn
 from pathlib import Path
-from src.components.data_transformation import FeatureEngineeringWrapper
+from backend.src.components.data_transformation import FeatureEngineeringWrapper
 
 # Advanced Scikit-Learn Tools
 from sklearn.model_selection import GridSearchCV
@@ -13,10 +13,10 @@ from sklearn.metrics import r2_score
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
 
-from src.logger import logger
-from src.exception import CustomException
-from src.entity.config_entity import ModelTrainerConfig
-from src.utils.common import read_yaml
+from backend.src.logger import logger
+from backend.src.exception import CustomException
+from backend.src.entity.config_entity import ModelTrainerConfig
+from backend.src.utils.common import read_yaml
 
 class ModelTrainer:
     def __init__(self, config: ModelTrainerConfig):
