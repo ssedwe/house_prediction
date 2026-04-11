@@ -1,8 +1,10 @@
 name: Sync to Hugging Face hub
+
 on:
   push:
     branches: [main]
-  force_push: true
+  # This allows you to manually trigger the deployment from the GitHub Actions tab!
+  workflow_dispatch: 
 
 jobs:
   deploy:
