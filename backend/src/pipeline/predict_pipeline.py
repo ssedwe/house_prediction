@@ -2,53 +2,60 @@ import sys
 import pandas as pd
 import joblib
 from pathlib import Path
-from backend.src.exception import CustomException
-from backend.src.logger import logger
 
-# CRITICAL IMPORT: So joblib knows how to unpickle your custom logic!
-from backend.src.components.data_transformation import FeatureEngineeringWrapper
+# Import your custom logger and exception handler
+from src.exception import CustomException
+from src.logger import logger
 
 class PredictPipeline:
     def __init__(self):
         try:
             # ==============================================================
-            # THE BULLETPROOF PATH FIX
+            # DYNAMIC PATH RESOLUTION (Bulletproof for Docker)
             # ==============================================================
-            # 1. Find EXACTLY where this specific file (predict_pipeline.py) lives
+            # 1. Find exactly where this specific file lives 
+            # Output: /app/backend/src/pipeline
             current_dir = Path(__file__).resolve().parent
             
-            # 2. Walk backwards up the folder tree to the main project root
-            # (From src/pipeline -> up to src -> up to root)
-            project_root = current_dir.parent.parent
+            # 2. Walk exactly 3 folders backward to the project root
+            # pipeline -> src -> backend -> root (/app)
+            project_root = current_dir.parent.parent.parent
             
-            # 3. Build the absolute path to the artifacts
+            # 3. Build the absolute paths to your specific artifact folders
             model_path = project_root / "artifacts" / "model_trainer" / "model.joblib"
             preprocessor_path = project_root / "artifacts" / "data_transformation" / "preprocessor.pkl"
             
-            logger.info("Loading preprocessor and model from absolute paths...")
+            logger.info(f"Attempting to load preprocessor from: {preprocessor_path}")
+            logger.info(f"Attempting to load model from: {model_path}")
+            
+            # 4. Load the artifacts
             self.model = joblib.load(model_path)
             self.preprocessor = joblib.load(preprocessor_path)
-            logger.info("Artifacts loaded successfully!")
+            
+            logger.info("Machine Learning Artifacts loaded successfully!")
             
         except Exception as e:
+            logger.error(f"FATAL ERROR loading ML artifacts: {e}")
             raise CustomException(e, sys)
 
     def predict(self, features):
         try:
-            # 1. Transform the raw data using our smart preprocessor
+            # 1. Transform the raw pandas dataframe using the preprocessor
             data_scaled = self.preprocessor.transform(features)
             
-            # 2. Make the prediction using our Champion Model
+            # 2. Run inference
             preds = self.model.predict(data_scaled)
             return preds
             
         except Exception as e:
+            logger.error(f"Error during prediction: {e}")
             raise CustomException(e, sys)
 
 
 class CustomData:
     """
-    Maps inputs from the HTML form / Pydantic JSON into a Pandas DataFrame.
+    Acts as the strict translation layer between the FastAPI JSON inputs
+    and the Pandas DataFrame that Scikit-Learn expects.
     """
     def __init__(self, bedrooms: float, bathrooms: float, sqft_living: int, sqft_lot: int,
                  floors: float, waterfront: int, view: int, condition: int, grade: int,
@@ -75,6 +82,7 @@ class CustomData:
 
     def get_data_as_data_frame(self):
         try:
+            # Map variables exactly to the column names the model was trained on
             custom_data_input_dict = {
                 "bedrooms": [self.bedrooms],
                 "bathrooms": [self.bathrooms],
@@ -92,10 +100,11 @@ class CustomData:
                 "zipcode": [self.zipcode],
                 "lat": [self.lat],
                 "long": [self.long],
-                "sqft_living15": [self.sqft_living15],
+                "sqft_living15": [self.sqft_living15]
             }
 
             return pd.DataFrame(custom_data_input_dict)
             
         except Exception as e:
+            logger.error(f"Error mapping data to DataFrame: {e}")
             raise CustomException(e, sys)

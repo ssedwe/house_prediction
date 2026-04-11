@@ -3,14 +3,11 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    # Notice we DO NOT expose the backend port to the host machine.
-    # The outside world cannot touch your ML model. Only the frontend can.
+      context: .
+      dockerfile: backend/Dockerfile
     expose:
       - "8000"
     environment:
-      # We pass your DAGsHub secrets securely from your local laptop to the container
       - DAGSHUB_USERNAME=${DAGSHUB_USERNAME}
       - DAGSHUB_TOKEN=${DAGSHUB_TOKEN}
     networks:
@@ -21,9 +18,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080" # This maps the container to your laptop's browser
+      - "8080:8080"
     environment:
-      # We tell the frontend exactly where to find the backend on the internal network
       - BACKEND_API_URL=http://backend:8000
     depends_on:
       - backend

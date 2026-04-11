@@ -4,4 +4,9 @@ pydantic
 scikit-learn
 pandas
 numpy
+joblib
+boto3==1.34.144
+botocore==1.34.144
+urllib3<2.0
 dvc
+dagshub
