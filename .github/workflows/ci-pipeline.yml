@@ -1,0 +1,39 @@
+name: Enterprise CI Pipeline
+
+# Trigger this action every time code is pushed to the main branch
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-python-code:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Grab the code from the repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # 2. Setup Python environment
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    # 3. Test if the Backend requirements can be installed without crashing
+    - name: Test Backend Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+
+    # 4. Test if the Frontend requirements can be installed without crashing
+    - name: Test Frontend Dependencies
+      run: |
+        pip install -r frontend/requirements.txt
+
+    # 5. (Future Step) Run PyTest
+    - name: Run Unit Tests
+      run: |
+        echo "This is where we will run pytest in the future to test the ML models!"
