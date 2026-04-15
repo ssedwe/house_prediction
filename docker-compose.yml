@@ -1,31 +1,51 @@
 version: '3.8'
 
 services:
-  backend:
+  # ==============================
+  # LAYER 2: 🧠 Backend API
+  # ==============================
+  backend_api:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
-    expose:
-      - "8000"
-    environment:
-      - DAGSHUB_USERNAME=${DAGSHUB_USERNAME}
-      - DAGSHUB_TOKEN=${DAGSHUB_TOKEN}
-    networks:
-      - enterprise_ml_net
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: house_prediction_api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # 🔥 THIS IS NEW: It gives the API access to your saved .joblib models!
+      - ./artifacts:/app/artifacts  
 
-  frontend:
+  # ==============================
+  # LAYER 3: 💻 Web Frontend (Nginx)
+  # ==============================
+  frontend_web:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: house_prediction_web
     ports:
-      - "8080:8080"
-    environment:
-      - BACKEND_API_URL=http://backend:8000
+      - "9090:80"   
     depends_on:
-      - backend
-    networks:
-      - enterprise_ml_net
+      - backend_api
 
-networks:
-  enterprise_ml_net:
-    driver: bridge
+
+
+  # ==============================
+  # LAYER 4: ⚙️ Training Engine
+  # ==============================
+  training_engine:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: house_prediction_trainer
+    profiles:
+      - training  # 🔥 This prevents it from running automatically!
+    env_file:
+      - .env
+    volumes:
+      # It needs the artifacts folder to save the .joblib files so the API can read them!
+      - ./artifacts:/app/artifacts 
+    # Override the API's Gunicorn command to run our Master Trigger instead
+    command: ["python", "-m", "backend.main"]

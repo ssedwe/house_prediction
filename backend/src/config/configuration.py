@@ -4,7 +4,8 @@ from backend.src.entity.config_entity import (DataIngestionConfig,
                                       DataValidationConfig, 
                                       DataTransformationConfig,
                                       ModelTrainerConfig,
-                                      ModelEvaluationConfig)
+                                      ModelEvaluationConfig,
+                                      PredictionConfig)
 from pathlib import Path
 
 class ConfigurationManager:
@@ -111,3 +112,20 @@ class ConfigurationManager:
         )
 
         return model_evaluation_config
+    
+
+
+  
+
+
+
+    def get_prediction_config(self) -> PredictionConfig:
+
+        config = self.config.prediction_pipeline
+
+        prediction_config = PredictionConfig(
+            model_path=Path(config.model_path),
+            preprocessor_path=Path(config.preprocessor_path)
+        )
+
+        return prediction_config

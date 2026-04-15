@@ -1,110 +1,80 @@
 import sys
 import pandas as pd
 import joblib
-from pathlib import Path
+from typing import Union
 
-# Import your custom logger and exception handler
-from src.exception import CustomException
-from src.logger import logger
+# Cleaned, single set of imports
+from backend.src.components.data_transformation import FeatureEngineeringWrapper 
+from backend.src.exception import CustomException
+from backend.src.logger import logger
+from backend.src.entity.config_entity import PredictionConfig
 
 class PredictPipeline:
-    def __init__(self):
+    """
+    Production-ready Prediction Pipeline
+    """
+    def __init__(self, config: PredictionConfig):
+        self.config = config
+
         try:
-            # ==============================================================
-            # DYNAMIC PATH RESOLUTION (Bulletproof for Docker)
-            # ==============================================================
-            # 1. Find exactly where this specific file lives 
-            # Output: /app/backend/src/pipeline
-            current_dir = Path(__file__).resolve().parent
-            
-            # 2. Walk exactly 3 folders backward to the project root
-            # pipeline -> src -> backend -> root (/app)
-            project_root = current_dir.parent.parent.parent
-            
-            # 3. Build the absolute paths to your specific artifact folders
-            model_path = project_root / "artifacts" / "model_trainer" / "model.joblib"
-            preprocessor_path = project_root / "artifacts" / "data_transformation" / "preprocessor.pkl"
-            
-            logger.info(f"Attempting to load preprocessor from: {preprocessor_path}")
-            logger.info(f"Attempting to load model from: {model_path}")
-            
-            # 4. Load the artifacts
-            self.model = joblib.load(model_path)
-            self.preprocessor = joblib.load(preprocessor_path)
-            
-            logger.info("Machine Learning Artifacts loaded successfully!")
-            
+            logger.info(f"Loading preprocessor from: {self.config.preprocessor_path}")
+            logger.info(f"Loading model from: {self.config.model_path}")
+
+            # Load ONCE (important)
+            self.model = joblib.load(self.config.model_path)
+            self.preprocessor = joblib.load(self.config.preprocessor_path)
+
+            logger.info("✅ ML artifacts loaded successfully")
+
         except Exception as e:
-            logger.error(f"FATAL ERROR loading ML artifacts: {e}")
+            logger.exception("❌ Failed to load ML artifacts")
             raise CustomException(e, sys)
 
-    def predict(self, features):
+    def predict(self, features: Union[pd.DataFrame, dict]):
         try:
-            # 1. Transform the raw pandas dataframe using the preprocessor
+            # ==============================================================
+            # 1. Handle input types (dict or DataFrame)
+            # ==============================================================
+            if isinstance(features, dict):
+                features = pd.DataFrame([features])
+
+            if not isinstance(features, pd.DataFrame):
+                raise TypeError("Input must be a dict or pandas DataFrame")
+
+            if features.empty:
+                raise ValueError("Input DataFrame is empty")
+
+            # ==============================================================
+            # 2. Transform (Passes data directly to your Custom Wrapper)
+            # ==============================================================
             data_scaled = self.preprocessor.transform(features)
-            
-            # 2. Run inference
+
+            # ==============================================================
+            # 3. Predict
+            # ==============================================================
             preds = self.model.predict(data_scaled)
-            return preds
-            
+
+            logger.info(f"Prediction successful: {preds}")
+
+            return preds.tolist()
+
         except Exception as e:
-            logger.error(f"Error during prediction: {e}")
+            logger.exception("❌ Error during prediction")
             raise CustomException(e, sys)
 
 
-class CustomData:
-    """
-    Acts as the strict translation layer between the FastAPI JSON inputs
-    and the Pandas DataFrame that Scikit-Learn expects.
-    """
-    def __init__(self, bedrooms: float, bathrooms: float, sqft_living: int, sqft_lot: int,
-                 floors: float, waterfront: int, view: int, condition: int, grade: int,
-                 sqft_above: int, sqft_basement: int, yr_built: int, yr_renovated: int,
-                 zipcode: int, lat: float, long: float, sqft_living15: int):
-        
-        self.bedrooms = bedrooms
-        self.bathrooms = bathrooms
-        self.sqft_living = sqft_living
-        self.sqft_lot = sqft_lot
-        self.floors = floors
-        self.waterfront = waterfront
-        self.view = view
-        self.condition = condition
-        self.grade = grade
-        self.sqft_above = sqft_above
-        self.sqft_basement = sqft_basement
-        self.yr_built = yr_built
-        self.yr_renovated = yr_renovated
-        self.zipcode = zipcode
-        self.lat = lat
-        self.long = long
-        self.sqft_living15 = sqft_living15
+# ==============================================================
+# SINGLETON INSTANCE (VERY IMPORTANT FOR PERFORMANCE)
+# ==============================================================
+_predict_pipeline_instance = None
 
-    def get_data_as_data_frame(self):
-        try:
-            # Map variables exactly to the column names the model was trained on
-            custom_data_input_dict = {
-                "bedrooms": [self.bedrooms],
-                "bathrooms": [self.bathrooms],
-                "sqft_living": [self.sqft_living],
-                "sqft_lot": [self.sqft_lot],
-                "floors": [self.floors],
-                "waterfront": [self.waterfront],
-                "view": [self.view],
-                "condition": [self.condition],
-                "grade": [self.grade],
-                "sqft_above": [self.sqft_above],
-                "sqft_basement": [self.sqft_basement],
-                "yr_built": [self.yr_built],
-                "yr_renovated": [self.yr_renovated],
-                "zipcode": [self.zipcode],
-                "lat": [self.lat],
-                "long": [self.long],
-                "sqft_living15": [self.sqft_living15]
-            }
+def get_predict_pipeline(config: PredictionConfig) -> PredictPipeline:
+    """
+    Singleton factory → ensures model loads only once
+    """
+    global _predict_pipeline_instance
 
-            return pd.DataFrame(custom_data_input_dict)
-            
-        except Exception as e:
-            logger.error(f"Error mapping data to DataFrame: {e}")
-            raise CustomException(e, sys)
+    if _predict_pipeline_instance is None:
+        _predict_pipeline_instance = PredictPipeline(config)
+
+    return _predict_pipeline_instance

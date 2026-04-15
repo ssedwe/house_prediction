@@ -1,32 +1,28 @@
-# backend/Dockerfile
-FROM python:3.9-slim
+# 1. Base image
+FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
-
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-
-# 1. Start in the absolute root folder
+# 2. Set working directory to the top level
 WORKDIR /app
 
-# 2. Copy the ENTIRE project into the container
-COPY . .
+# 3. Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# 3. Install the bulletproof requirements
-RUN pip install --no-cache-dir -r backend/requirements.txt
+# 4. Copy requirements first (cache optimization)
+COPY requirements.txt .
 
-# 4. Initialize dummy DVC so DAGsHub doesn't crash
-RUN git init && \
-    git config user.email "mlops@enterprise.com" && \
-    git config user.name "MLOps Engine" && \
-    git add . && \
-    git commit -m "Initialize DVC environment"
+# 5. Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
+# 6. Copy the entire backend folder into a 'backend' directory inside the container
+# This is the magic step that makes your 'backend.src...' imports work!
+COPY . /app/backend
+
+# 7. Expose port
 EXPOSE 8000
 
-# 5. THE SILVER BULLET: Move inside the backend folder BEFORE turning Uvicorn on
-WORKDIR /app/backend
-
-# 6. Boot sequence
-CMD ["sh", "-c", "dvc remote modify origin --local auth basic && dvc remote modify origin --local user $DAGSHUB_USERNAME && dvc remote modify origin --local password $DAGSHUB_TOKEN && dvc pull -r origin && uvicorn api:app --host 0.0.0.0 --port 8000 --workers 4"]
+# 8. Run production server
+# We now tell Gunicorn to look inside backend -> src -> api.py
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "backend.src.api:app", "--bind", "0.0.0.0:8000"]

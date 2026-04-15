@@ -59,3 +59,10 @@ class ModelEvaluationConfig:
     preprocessor_path: Path
     metric_file_name: Path
     target_column: str
+
+
+
+@dataclass(frozen=True)
+class PredictionConfig:
+    model_path: Path
+    preprocessor_path: Path

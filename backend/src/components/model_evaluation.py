@@ -12,10 +12,12 @@ from backend.src.exception import CustomException
 from backend.src.entity.config_entity import ModelEvaluationConfig
 from backend.src.utils.common import save_json
 from pathlib import Path
-
+from dotenv import load_dotenv
+from pathlib import Path
 # CRITICAL MLOPS IMPORT: We must import the custom wrapper so joblib can unpickle it!
 from backend.src.components.data_transformation import FeatureEngineeringWrapper
-
+env_path = Path(__file__).resolve().parent.parent.parent.parent / '.env'
+load_dotenv(dotenv_path=env_path)
 class ModelEvaluation:
     def __init__(self, config: ModelEvaluationConfig):
         self.config = config
