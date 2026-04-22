@@ -91,11 +91,13 @@ def test_model_trainer(mock_joblib_load, mock_read_yaml, mock_mlflow, mock_mlflo
     trainer = ModelTrainer(config=config)
     trainer.train()
     
-    # ASSERT: Did the Champion Model save to the hard drive?
-    model_path = os.path.join(config.artifact_dir, config.model_name)
-    assert os.path.exists(model_path), "Champion model was not saved!"
+    # ASSERT: Verify that MLflow received the model
+    mock_mlflow.sklearn.log_model.assert_called_once()
+    call_kwargs = mock_mlflow.sklearn.log_model.call_args[1]
+    assert call_kwargs['registered_model_name'] == "HousePriceModel", "Model not registered with correct name"
+    assert call_kwargs['artifact_path'] == "model", "Model artifact path incorrect"
     
-    # Verify that MLflow was called correctly
+    # Verify that MLflow was configured correctly
     mock_mlflow.set_registry_uri.assert_called_once()
     mock_mlflow.sklearn.autolog.assert_called_once()
     
