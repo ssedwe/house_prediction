@@ -79,7 +79,7 @@ class ModelTrainer:
 
                 with mlflow.start_run(run_name=f"Tuning_{model_name}"):
                     # 3. FIT PIPELINE ON RAW DATA (train_x)
-                    gs = GridSearchCV(pipeline, param_grid, cv=3, n_jobs=-1, scoring='r2')
+                    gs = GridSearchCV(pipeline, param_grid, cv=3, n_jobs=1, scoring='r2')
                     gs.fit(train_x, train_y)
 
                     best_model = gs.best_estimator_
