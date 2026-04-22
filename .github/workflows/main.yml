@@ -35,7 +35,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest httpx pytest-asyncio uvicorn
+          # ✅ FIX 1: Explicitly installing pymongo for the MongoDB tests
+          pip install pytest httpx pytest-asyncio uvicorn pymongo
 
       - name: Start FastAPI Server in Background
         # We start the server so test_api.py can actually hit http://localhost:8000
@@ -52,6 +53,8 @@ jobs:
           DAGSHUB_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
           DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
           MONGODB_URL: "mongodb://localhost:27017"
+          # ✅ FIX 2: Set PYTHONPATH so GitHub Actions knows where the 'backend' folder is
+          PYTHONPATH: .
         run: |
           pytest -v
 
