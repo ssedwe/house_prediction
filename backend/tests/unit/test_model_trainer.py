@@ -55,7 +55,9 @@ def test_model_trainer(mock_joblib_load, mock_read_yaml, mock_mlflow, mock_mlflo
     # 1. Mock the Preprocessor: Instead of loading the real one, return a dummy
     # that just passes the data through unchanged so the models can train.
     mock_preprocessor = MagicMock()
-    mock_preprocessor.transform.side_effect = lambda x: x 
+    mock_preprocessor.transform.side_effect = lambda x: x
+    mock_preprocessor.fit.return_value = mock_preprocessor  # For pipeline chaining
+    mock_preprocessor.fit_transform.side_effect = lambda x, y=None: x  # Return X unchanged
     mock_joblib_load.return_value = mock_preprocessor
     
     # 2. Mock the params.yaml: Provide simple parameters so GridSearch is fast
