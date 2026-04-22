@@ -2,8 +2,23 @@ import os
 import pytest
 import pandas as pd
 from unittest.mock import patch, MagicMock
+from sklearn.base import BaseEstimator, TransformerMixin
 from backend.src.components.model_trainer import ModelTrainer
 from backend.src.entity.config_entity import ModelTrainerConfig
+
+
+class DummyTransformer(BaseEstimator, TransformerMixin):
+    """A simple transformer that passes data through unchanged."""
+    
+    def fit(self, X, y=None):
+        return self
+    
+    def transform(self, X):
+        return X
+    
+    def fit_transform(self, X, y=None, **fit_params):
+        return self.fit(X, y).transform(X)
+
 
 # ==============================================================
 # ARRANGE: THE SETUP FIXTURE
@@ -52,13 +67,9 @@ def setup_trainer_environment():
 def test_model_trainer(mock_joblib_load, mock_read_yaml, mock_mlflow, mock_mlflow_client_class, setup_trainer_environment):
     config = setup_trainer_environment
     
-    # 1. Mock the Preprocessor: Instead of loading the real one, return a dummy
-    # that just passes the data through unchanged so the models can train.
-    mock_preprocessor = MagicMock()
-    mock_preprocessor.transform.side_effect = lambda x: x
-    mock_preprocessor.fit.return_value = mock_preprocessor  # For pipeline chaining
-    mock_preprocessor.fit_transform.side_effect = lambda x, y=None: x  # Return X unchanged
-    mock_joblib_load.return_value = mock_preprocessor
+    # 1. Use a real transformer that just passes data through
+    preprocessor = DummyTransformer()
+    mock_joblib_load.return_value = preprocessor
     
     # 2. Mock the params.yaml: Provide simple parameters so GridSearch is fast
     mock_read_yaml.return_value = {
