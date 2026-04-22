@@ -1,21 +1,38 @@
+# ==========================================
+# CORE DATA SCIENCE & ML
+# ==========================================
 pandas
 numpy
 scikit-learn
 joblib
+
+# ==========================================
+# MLOPS & TRACKING
+# ==========================================
+mlflow
+
+# ==========================================
+# BACKEND API & SERVER
+# ==========================================
 fastapi
 uvicorn
-jinja2
-python-multipart
 pydantic
-dvc
-# ... your existing packages ...
 
-# --- Testing & CI/CD Dependencies ---
+# ==========================================
+# DATABASE
+# ==========================================
+pymongo
+
+# ==========================================
+# UTILITIES & CONFIG (The Hidden Traps)
+# ==========================================
+python-dotenv
+python-box
+PyYAML
+
+# ==========================================
+# TESTING (CI/CD)
+# ==========================================
 pytest
 pytest-asyncio
 httpx
-uvicorn
-pymongo
-mlflow
-# i am good
-
