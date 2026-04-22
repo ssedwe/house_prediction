@@ -2,9 +2,8 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import joblib
 import mlflow
-import mlflow.sklearn
+import mlflow.pyfunc  # Use pyfunc for universal loading
 from urllib.parse import urlparse
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from backend.src.logger import logger
@@ -13,11 +12,10 @@ from backend.src.entity.config_entity import ModelEvaluationConfig
 from backend.src.utils.common import save_json
 from pathlib import Path
 from dotenv import load_dotenv
-from pathlib import Path
-# CRITICAL MLOPS IMPORT: We must import the custom wrapper so joblib can unpickle it!
-from backend.src.components.data_transformation import FeatureEngineeringWrapper
-env_path = Path(__file__).resolve().parent.parent.parent.parent / '.env'
-load_dotenv(dotenv_path=env_path)
+
+# Note: joblib and FeatureEngineeringWrapper imports are removed because 
+# the Unified Pipeline handles everything internally now.
+
 class ModelEvaluation:
     def __init__(self, config: ModelEvaluationConfig):
         self.config = config
@@ -30,54 +28,52 @@ class ModelEvaluation:
 
     def log_into_mlflow(self):
         try:
-            logger.info("Loading unseen test data")
+            logger.info("Loading unseen RAW test data")
             test_data = pd.read_csv(self.config.test_data_path)
-            
-            # Drop missing values to match training logic
             test_data.dropna(inplace=True)
 
             # Separate X and y
             test_x = test_data.drop([self.config.target_column], axis=1)
             test_y = test_data[[self.config.target_column]]
 
-            logger.info("Loading smart preprocessor and trained model")
-            preprocessor = joblib.load(self.config.preprocessor_path)
-            model = joblib.load(self.config.model_path)
+            # Set MLflow environment
+            mlflow.set_tracking_uri("https://dagshub.com/ssedwe/house_prediction.mlflow")
+            mlflow.set_registry_uri("https://dagshub.com/ssedwe/house_prediction.mlflow")
+            
+            # Load the Unified Pipeline (Brain + Translator combined)
+            logger.info("Fetching Unified Champion model from MLflow registry...")
+            
+            # Use pyfunc.load_model for the most stable cross-environment loading
+            model = mlflow.pyfunc.load_model("models:/HousePriceModel/Production")
+            logger.info("Champion model loaded successfully")
 
             # ====================================================
-            # THE MAGIC: One line does the Pandas math AND the scaling!
-            # ====================================================
-            logger.info("Transforming test data using smart preprocessor")
-            test_x_transformed = preprocessor.transform(test_x)
+            # NO MANUAL TRANSFORMATION HERE! 
+            # The model is a Pipeline; it transforms the data itself.
             # ====================================================
 
-            # Set MLflow tracking URI (Connects to DagsHub)
-            mlflow.set_registry_uri("https://dagshub.com/ssedwe/house_prediction.mlflow") 
-            tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
+            with mlflow.start_run(run_name="Model_Evaluation"):
+                logger.info("Making predictions on RAW test data")
+                # We pass RAW test_x directly
+                predicted_qualities = model.predict(test_x)
 
-            with mlflow.start_run():
-                logger.info("Making predictions on transformed test data")
-                predicted_qualities = model.predict(test_x_transformed)
-
-                logger.info("Calculating metrics")
+                logger.info("Calculating evaluation metrics")
                 (rmse, mae, r2) = self.eval_metrics(test_y, predicted_qualities)
                 
                 # Saving metrics locally
                 scores = {"rmse": rmse, "mae": mae, "r2": r2}
                 save_json(path=Path(self.config.metric_file_name), data=scores)
+                logger.info(f"Metrics saved locally - RMSE: {rmse:.4f}, MAE: {mae:.4f}, R2: {r2:.4f}")
 
-                # Logging metrics to the MLflow Cloud
+                # Logging metrics to MLflow Cloud
                 mlflow.log_metric("rmse", rmse)
                 mlflow.log_metric("mae", mae)
                 mlflow.log_metric("r2", r2)
-
-                # Logging the actual model to the MLflow Vault
-                if tracking_url_type_store != "file":
-                    mlflow.sklearn.log_model(model, "model", registered_model_name="LinearRegressionModel")
-                else:
-                    mlflow.sklearn.log_model(model, "model")
+                logger.info("Evaluation metrics logged to MLflow")
                     
-            logger.info("Model Evaluation completed and logged to MLflow successfully!")
+            logger.info("Model Evaluation completed successfully!")
 
         except Exception as e:
+            # Emojis removed to prevent Windows terminal crashes
+            logger.error(f"Model Evaluation failed: {e}")
             raise CustomException(e, sys)

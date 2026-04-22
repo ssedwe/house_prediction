@@ -3,7 +3,7 @@ import httpx
 import numpy as np
 
 # Change this to your local or docker container URL
-BASE_URL = "http://localhost:8080" 
+BASE_URL = "http://localhost:8000" 
 
 @pytest.fixture
 def valid_house_data():
@@ -23,15 +23,15 @@ async def test_predict_endpoint_success(valid_house_data):
     Verifies that a valid payload returns a 200 OK and a numeric prediction.
     """
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
-        response = await client.post("/predict", json=valid_house_data)
+        response = await client.post("/api/v1/predict", json=valid_house_data)
         
         assert response.status_code == 200
         data = response.json()
         
-        # Industry check: Ensure the key 'prediction' exists and is a positive number
-        assert "prediction" in data
-        assert isinstance(data["prediction"], (int, float))
-        assert data["prediction"] > 0
+        # Industry check: Ensure the key 'predicted_price' exists and is a positive number
+        assert "predicted_price" in data
+        assert isinstance(data["predicted_price"], (int, float))
+        assert data["predicted_price"] > 0
 
 @pytest.mark.asyncio
 async def test_predict_endpoint_invalid_data():
@@ -42,7 +42,7 @@ async def test_predict_endpoint_invalid_data():
     bad_data = {"bedrooms": "three", "price": "expensive"} # Wrong types
     
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
-        response = await client.post("/predict", json=bad_data)
+        response = await client.post("/api/v1/predict", json=bad_data)
         
         # FastAPI returns 422 for Unprocessable Entity
         assert response.status_code in [400, 422]
@@ -59,7 +59,7 @@ async def test_api_latency():
                                 "yr_renovated", "zipcode", "lat", "long", "sqft_living15"]}
     
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
-        response = await client.post("/predict", json=payload)
+        response = await client.post("/api/v1/predict", json=payload)
         
         # Ensure response time is under 500ms for industrial responsiveness
         assert response.elapsed.total_seconds() < 0.5
@@ -71,6 +71,6 @@ async def test_health_check():
     Standard check used by Kubernetes to see if the container is alive.
     """
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
-        response = await client.get("/health")
+        response = await client.get("/api/v1/health")
         assert response.status_code == 200
-        assert response.json()["status"] == "up"
+        assert response.json()["status"] == "healthy"

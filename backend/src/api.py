@@ -4,9 +4,25 @@ from pydantic import BaseModel, Field
 import pandas as pd
 import os
 import logging
+import mlflow
 
-# Import pipeline
-from backend.src.pipeline.predict_pipeline import PredictPipeline
+from dotenv import load_dotenv
+
+# CRITICAL MLOPS IMPORT: We must import the custom wrapper so joblib can unpickle it!
+
+
+# ---------------- ENV ----------------
+load_dotenv()
+
+DAGSHUB_USERNAME = os.getenv("DAGSHUB_USERNAME")
+DAGSHUB_TOKEN = os.getenv("DAGSHUB_TOKEN")
+
+if DAGSHUB_USERNAME and DAGSHUB_TOKEN:
+    os.environ["MLFLOW_TRACKING_USERNAME"] = DAGSHUB_USERNAME
+    os.environ["MLFLOW_TRACKING_PASSWORD"] = DAGSHUB_TOKEN
+
+mlflow.set_tracking_uri("https://dagshub.com/ssedwe/house_prediction.mlflow")
+mlflow.set_registry_uri("https://dagshub.com/ssedwe/house_prediction.mlflow")
 
 # ---------------- LOGGING ----------------
 logging.basicConfig(level=logging.INFO)
@@ -16,11 +32,13 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="House Price Prediction API", version="1.0.0")
 
 # ---------------- CORS ----------------
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:9090").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:9090"],  # change to frontend domain
+    allow_origins=[origin.strip() for origin in allowed_origins],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -44,38 +62,24 @@ class HouseData(BaseModel):
     long: float
     sqft_living15: int = Field(gt=0)
 
-
 class PredictionResponse(BaseModel):
     predicted_price: float
 
-
-# ---------------- CONFIG ----------------
-class PredictionConfig:
-    preprocessor_path = os.getenv("PREPROCESSOR_PATH", "artifacts/data_transformation/preprocessor.pkl")
-    model_path = os.getenv("MODEL_PATH", "artifacts/model_trainer/model.joblib")
-
-
-# ---------------- LOAD MODEL ON STARTUP ----------------
-predict_pipeline = None
+# ---------------- MODEL ----------------
+model = None
+preprocessor = None
 
 @app.on_event("startup")
 def load_model():
-    global predict_pipeline
+    global model
     try:
-        logger.info("Loading model and preprocessor...")
-        config = PredictionConfig()
-        predict_pipeline = PredictPipeline(config)
-        logger.info("Model loaded successfully")
+        logger.info("Connecting to MLflow and loading Unified Pipeline...")
+        # Note: We use @Production or /Production depending on your MLflow version
+        model = mlflow.pyfunc.load_model("models:/HousePriceModel/Production")
+        logger.info("Model loaded successfully from MLflow")
     except Exception as e:
         logger.error(f"Model loading failed: {e}")
         raise e
-
-
-# ---------------- CORS OPTIONS HANDLER ----------------
-@app.options("/api/v1/predict")
-async def options_predict():
-    return {}
-
 
 # ---------------- PREDICTION ENDPOINT ----------------
 @app.post("/api/v1/predict", response_model=PredictionResponse)
@@ -83,28 +87,36 @@ async def predict_datapoint(data: HouseData):
     try:
         logger.info("Received prediction request")
 
-        df = pd.DataFrame([data.dict()])
+        # Convert input data to DataFrame
+        df = pd.DataFrame([data.model_dump()])
+        logger.info("Input data converted to DataFrame")
 
-        results = predict_pipeline.predict(df)
+        # The 'model' is now a Unified Pipeline. It handles transformation automatically!
+        logger.info("Executing unified prediction pipeline...")
+        prediction = model.predict(df)
 
-        prediction = float(results[0])
+        if hasattr(prediction, "__len__"):
+            predicted_price = float(prediction[0])
+        else:
+            predicted_price = float(prediction)
 
-        logger.info(f"Prediction success: {prediction}")
-
-        return PredictionResponse(predicted_price=prediction)
+        logger.info(f"Prediction success: ${predicted_price:,.2f}")
+        return PredictionResponse(predicted_price=predicted_price)
 
     except Exception as e:
         logger.error(f"Prediction failed: {e}")
         raise HTTPException(status_code=500, detail="Prediction failed")
-
 
 # ---------------- HEALTH CHECK ----------------
 @app.get("/api/v1/health")
 def health_check():
     return {"status": "healthy", "message": "API is running"}
 
+# ---------------- OPTIONS HANDLERS ----------------
+@app.options("/api/v1/predict")
+async def options_predict():
+    return {}
 
-# Also add OPTIONS for health endpoint
 @app.options("/api/v1/health")
 async def options_health():
     return {}

@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile
     container_name: house_prediction_web
     ports:
-      - "9090:80"   
+      - "9090:80"
     depends_on:
       - backend_api
 

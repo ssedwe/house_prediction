@@ -45,10 +45,11 @@ def setup_trainer_environment():
 # ACT & ASSERT: THE MOCKED TEST
 # ==============================================================
 # We use @patch to intercept external calls during the test
+@patch("backend.src.components.model_trainer.mlflow.tracking.MlflowClient")
 @patch("backend.src.components.model_trainer.mlflow")
 @patch("backend.src.components.model_trainer.read_yaml")
 @patch("backend.src.components.model_trainer.joblib.load")
-def test_model_trainer(mock_joblib_load, mock_read_yaml, mock_mlflow, setup_trainer_environment):
+def test_model_trainer(mock_joblib_load, mock_read_yaml, mock_mlflow, mock_mlflow_client_class, setup_trainer_environment):
     config = setup_trainer_environment
     
     # 1. Mock the Preprocessor: Instead of loading the real one, return a dummy
@@ -64,7 +65,16 @@ def test_model_trainer(mock_joblib_load, mock_read_yaml, mock_mlflow, setup_trai
         "GradientBoostingRegressor": {"n_estimators": [10]}
     }
     
-    # 3. Instantiate and Act
+    # 3. Mock MLflow Client for model promotion
+    mock_client = MagicMock()
+    mock_mlflow_client_class.return_value = mock_client
+    
+    # Mock get_latest_versions to return a fake version
+    mock_version = MagicMock()
+    mock_version.version = "1"
+    mock_client.get_latest_versions.return_value = [mock_version]
+    
+    # 4. Instantiate and Act
     trainer = ModelTrainer(config=config)
     trainer.train()
     
@@ -72,6 +82,10 @@ def test_model_trainer(mock_joblib_load, mock_read_yaml, mock_mlflow, setup_trai
     model_path = os.path.join(config.artifact_dir, config.model_name)
     assert os.path.exists(model_path), "Champion model was not saved!"
     
-    # Verify that the blindfold worked and MLflow was called safely
+    # Verify that MLflow was called correctly
     mock_mlflow.set_registry_uri.assert_called_once()
     mock_mlflow.sklearn.autolog.assert_called_once()
+    
+    # Verify that model promotion was attempted
+    mock_client.get_latest_versions.assert_called_once_with("HousePriceModel")
+    mock_client.transition_model_version_stage.assert_called_once()
